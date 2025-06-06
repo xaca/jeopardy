@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Question from '../components/Question';
+import TeamCard from '../components/TeamCard';
 
 interface GameProps {
   teams: number;
@@ -158,10 +159,12 @@ const Game: React.FC<GameProps> = ({ teams }) => {
           <div className="mt-2">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
               {teamScores.map((team) => (
-                <div key={team.id} className="bg-[#000066] p-2 rounded text-white">
-                  <h3 className="text-base md:text-lg font-bold mb-1">{team.name}</h3>
-                  <p className="text-lg md:text-xl lg:text-2xl">${team.score}</p>
-                </div>
+                <TeamCard
+                  key={team.id}
+                  id={team.id.toString()}
+                  name={team.name}
+                  score={team.score}
+                />
               ))}
             </div>           
           </div>
