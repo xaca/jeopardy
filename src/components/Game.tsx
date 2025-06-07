@@ -6,7 +6,7 @@ import { createTeams, readTeams, subscribeToTeams, updateTeamScore } from '@/lib
 import type { Team } from '@/types/Team';
 import type { QuestionData } from '@/data/mockQuestions';
 import { categories, pointValues, questionsData } from '@/data/mockQuestions';
-import { updatePartidaBoard } from '@/lib/xaca/data/game';
+import { updatePartidaBoard, subscribeToBoard } from '@/lib/xaca/data/game';
 import { getBoardCoordinates } from '@/utils/boardUtils';
 
 interface GameProps {
@@ -61,7 +61,7 @@ const Game: React.FC<GameProps> = ({ totalTeams, partidaId }) => {
     initializeTeams();
 
     // Subscribe to real-time team updates
-    const unsubscribe = subscribeToTeams(partidaId, (teams) => {
+    const unsubscribeTeams = subscribeToTeams(partidaId, (teams) => {
       setTeamScores(teams.map(team => ({
         id: team.id,
         name: team.name,
@@ -70,8 +70,26 @@ const Game: React.FC<GameProps> = ({ totalTeams, partidaId }) => {
       })));
     });
 
-    // Cleanup subscription on component unmount
-    return () => unsubscribe();
+    // Subscribe to real-time board updates
+    const unsubscribeBoard = subscribeToBoard(partidaId, (updatedPositions) => {
+      // Convert row,col positions to category-points format
+      const newActivatedQuestions = new Set<string>();
+      updatedPositions.forEach(pos => {
+        const [row, col] = pos.split(',').map(Number);
+        const category = categories[col];
+        const points = pointValues[row];
+        if (category && points) {
+          newActivatedQuestions.add(`${category}-${points}`);
+        }
+      });
+      setActivatedQuestions(newActivatedQuestions);
+    });
+
+    // Cleanup subscriptions on component unmount
+    return () => {
+      unsubscribeTeams();
+      unsubscribeBoard();
+    };
   }, [partidaId, totalTeams]);
 
   const handleQuestionClick = (category: string, points: number) => {

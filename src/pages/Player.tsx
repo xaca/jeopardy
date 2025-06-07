@@ -2,7 +2,7 @@ import { useParams } from "react-router";
 import { useEffect, useState } from "react";
 import { readTeam, updateTeamScore, subscribeToTeams } from "@/lib/xaca/data/teams";
 import CircularTimer from "@/components/CircularTimer";
-import { readPartidaBoard } from "@/lib/xaca/data/game";
+import { readPartidaBoard, subscribeToBoard } from "@/lib/xaca/data/game";
 import GameBoard from "@/components/GameBoard";
 import { categories, pointValues, questionsData } from "@/data/mockQuestions";
 
@@ -103,7 +103,8 @@ export default function Player() {
     const [activatedQuestions, setActivatedQuestions] = useState<Set<string>>(new Set<string>());
     useEffect(() => {
         console.log(partidaId, teamId);
-        let unsubscribe: (() => void) | undefined;
+        let unsubscribeTeams: (() => void) | undefined;
+        let unsubscribeBoard: (() => void) | undefined;
 
         (async () => {
             if (partidaId && teamId) {
@@ -112,35 +113,29 @@ export default function Player() {
                 setScore(team.score);
                 setTeamName(team.name);
 
-                // Subscribe to real-time updates
-                unsubscribe = subscribeToTeams(partidaId, (teams) => {
+                // Subscribe to real-time team updates
+                unsubscribeTeams = subscribeToTeams(partidaId, (teams) => {
                     const updatedTeam = teams.find(t => t.id === teamId);
                     if (updatedTeam) {
                         setScore(updatedTeam.score);
                         setTeamName(updatedTeam.name);
                     }
                 });
+
+                // Subscribe to real-time board updates
+                unsubscribeBoard = subscribeToBoard(partidaId, (updatedPositions) => {
+                    setActivatedQuestions(updatedPositions);
+                });
             }
         })();
 
-        // Cleanup subscription on unmount
+        // Cleanup subscriptions on unmount
         return () => {
-            if (unsubscribe) {
-                unsubscribe();
-            }
+            if (unsubscribeTeams) unsubscribeTeams();
+            if (unsubscribeBoard) unsubscribeBoard();
         };
     }, [partidaId, teamId]);
 
-    useEffect(() => {
-        const fetchBoard = async () => {
-            if (partidaId) {
-                const board = await readPartidaBoard(partidaId);
-                console.log(board);
-                setActivatedQuestions(board);
-            }
-        }
-        fetchBoard();
-    }, []);
     const handleTimerComplete = () => {
         setIsAnswerEnabled(false);
         setAnswer(""); // Clear the answer when time is up

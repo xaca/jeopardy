@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, updateDoc } from "firebase/firestore";
+import { getFirestore, doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import { firebaseConfig } from "../utils/config";
 
 export interface Partida {
@@ -106,4 +106,46 @@ export async function updatePartidaBoard(partidaId: string, row: number, col: nu
         console.error("Error updating partida board:", error);
         throw error;
     }
+}
+
+/**
+ * Subscribes to real-time updates of the board state
+ * @param partidaId The ID of the partida to subscribe to
+ * @param onBoardUpdate Callback function that receives the updated Set of activated positions
+ * @returns A cleanup function to unsubscribe
+ */
+export function subscribeToBoard(partidaId: string, onBoardUpdate: (activatedPositions: Set<string>) => void) {
+    if (!partidaId) return () => {};
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const partidaRef = doc(db, "partidas", partidaId);
+    return onSnapshot(partidaRef, (doc) => {
+        if (!doc.exists()) {
+            console.error(`Partida with ID ${partidaId} not found`);
+            return;
+        }
+
+        const partidaData = doc.data() as Partida;
+        const usedPositions = new Set<string>();
+        const rows = partidaData.board.split(';');
+
+        // Validate the matrix structure
+        if (rows.length !== 5 || rows.some(row => row.split(',').length !== 5)) {
+            console.error('Invalid board format: expected a 5x5 matrix');
+            return;
+        }
+
+        // Convert to Set of used positions
+        rows.forEach((row, rowIndex) => {
+            row.split(',').forEach((cell, colIndex) => {
+                if (parseInt(cell, 10) === 1) {
+                    usedPositions.add(`${rowIndex},${colIndex}`);
+                }
+            });
+        });
+
+        onBoardUpdate(usedPositions);
+    });
 }
