@@ -1,18 +1,138 @@
 import { useParams } from "react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { readTeam, updateTeamScore, subscribeToTeams } from "@/lib/xaca/data/teams";
+import CircularTimer from "@/components/CircularTimer";
 
 export default function Player() {
     const { partidaId, teamId } = useParams();
+    const [score, setScore] = useState(0);
+    const [teamName, setTeamName] = useState("");
+    const [answer, setAnswer] = useState("");
+    const [isAnswerEnabled, setIsAnswerEnabled] = useState(false);
+    const ANSWER_DURATION = 60; // Duration in seconds
 
     useEffect(() => {
         console.log(partidaId, teamId);
+        let unsubscribe: (() => void) | undefined;
+
+        (async () => {
+            if (partidaId && teamId) {
+                // Initial team data fetch
+                const team = await readTeam(partidaId, teamId);
+                setScore(team.score);
+                setTeamName(team.name);
+
+                // Subscribe to real-time updates
+                unsubscribe = subscribeToTeams(partidaId, (teams) => {
+                    const updatedTeam = teams.find(t => t.id === teamId);
+                    if (updatedTeam) {
+                        setScore(updatedTeam.score);
+                        setTeamName(updatedTeam.name);
+                    }
+                });
+            }
+        })();
+
+        // Cleanup subscription on unmount
+        return () => {
+            if (unsubscribe) {
+                unsubscribe();
+            }
+        };
     }, [partidaId, teamId]);
 
+    const handleTimerComplete = () => {
+        setIsAnswerEnabled(false);
+        setAnswer(""); // Clear the answer when time is up
+    };
+
+    const startAnswerTimer = () => {
+        setIsAnswerEnabled(true);
+        setAnswer(""); // Clear any previous answer
+    };
+
+    const sendAnswer = (partidaId: string, teamId: string, answer: string) => {
+        if (!isAnswerEnabled) return;
+        console.log(partidaId, teamId, answer);
+        setIsAnswerEnabled(false);
+    }
+
     return (
-        <div>
-            <h1>Player</h1>
-            <p>Partida: {partidaId}</p>
-            <p>Equipo: {teamId}</p>
+        <div className="min-h-screen bg-[#000033] text-white p-4 md:p-8">
+            <div className="max-w-4xl mx-auto">
+                <div className="bg-[#000066] rounded-lg p-6 md:p-8 shadow-lg">
+                    <h1 className="text-2xl md:text-3xl font-bold mb-6 text-center">
+                        Team Score
+                    </h1>
+                    
+                    {partidaId && teamId && (
+                        <div className="space-y-6">
+                            <div className="text-center">
+                                <p className="text-gray-300 text-sm md:text-base mb-1">Game ID</p>
+                                <p className="font-mono text-base md:text-lg bg-[#000044] p-2 rounded">
+                                    {partidaId}
+                                </p>
+                            </div>
+
+                            <div className="text-center">
+                                <p className="text-gray-300 text-sm md:text-base mb-1">Team</p>
+                                <p className="font-bold text-xl md:text-2xl text-yellow-400">
+                                    {teamName}
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col items-center space-y-4">
+                                <div className="w-full max-w-xs">
+                                    <label htmlFor="score" className="block text-gray-300 text-sm md:text-base mb-2">
+                                        Current Score
+                                    </label>
+                                    <input
+                                        id="score"
+                                        type="text"
+                                        value={score}
+                                        className="w-full bg-[#000044] text-white text-2xl md:text-3xl font-bold p-3 rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        disabled
+                                    />
+                                </div>
+                                <div className="w-full max-w-xs space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <button
+                                            onClick={startAnswerTimer}
+                                            disabled={isAnswerEnabled}
+                                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Start Answer
+                                        </button>
+                                        {isAnswerEnabled && (
+                                            <CircularTimer
+                                                duration={ANSWER_DURATION}
+                                                onComplete={handleTimerComplete}
+                                                size={40}
+                                                className="text-white"
+                                            />
+                                        )}
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={answer}
+                                        onChange={(e) => setAnswer(e.target.value)}
+                                        className="w-full bg-[#000044] text-white text-2xl md:text-3xl font-bold p-3 rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        disabled={!isAnswerEnabled}
+                                        placeholder={isAnswerEnabled ? "Type your answer..." : "Click Start Answer to begin"}
+                                    />
+                                    <button
+                                        onClick={() => sendAnswer(partidaId, teamId, answer)}
+                                        disabled={!isAnswerEnabled || !answer.trim()}
+                                        className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Submit Answer
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
-    )
+    );
 }

@@ -1,5 +1,5 @@
 import TeamCard from "@/components/TeamCard";
-import {readTeams, readPartidasId} from "@/lib/xaca/data/read_teams";
+import {readTeams, readPartidasId, subscribeToTeams} from "@/lib/xaca/data/teams";
 import type { Team } from "@/types/Team";
 import { useEffect, useState } from "react";
 
@@ -18,12 +18,21 @@ export default function Host() {
         })();
     }, []);
 
+    // Set up listener when selectedPartidaId changes
+    useEffect(() => {
+        if (!selectedPartidaId) return;
+
+        // Set up the real-time listener
+        const unsubscribe = subscribeToTeams(selectedPartidaId, (updatedTeams) => {
+            setTeams(updatedTeams);
+        });
+
+        // Cleanup function to remove the listener when component unmounts or partidaId changes
+        return () => unsubscribe();
+    }, [selectedPartidaId]);
+
     function handlePartidaChange(partidaId: string) {
         setSelectedPartidaId(partidaId);
-        (async () => {
-            const teams = await readTeams(partidaId);
-            setTeams(teams);
-        })();
     }
 
     return (
@@ -38,7 +47,12 @@ export default function Host() {
                     <option key={partidaId} value={partidaId}>{partidaId}</option>
                 ))}
             </select>
-            <button className="bg-blue-500 text-white p-2 rounded" onClick={() => handlePartidaChange(selectedPartidaId)}></button>
+            <button 
+                className="bg-blue-500 text-white p-2 rounded ml-2" 
+                onClick={() => handlePartidaChange(selectedPartidaId)}
+            >
+                Refresh
+            </button>
             {teams.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
                 {teams.map((team) => (

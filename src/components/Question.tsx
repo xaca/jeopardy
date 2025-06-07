@@ -1,10 +1,5 @@
 import React, { useState } from 'react';
-
-interface TeamScore {
-  id: number;
-  score: number;
-  name: string;
-}
+import type { Team } from '@/types/Team';
 
 interface QuestionProps {
   question: string;
@@ -13,8 +8,8 @@ interface QuestionProps {
   answer: string;
   onContinue?: () => void;
   onReveal?: () => void;
-  teams: TeamScore[];
-  onScoreUpdate: (teamId: number, increment: boolean) => void;
+  teams: Team[];
+  onScoreUpdate: (teamId: string, increment: boolean) => void;
 }
 
 const Question: React.FC<QuestionProps> = ({
@@ -28,16 +23,22 @@ const Question: React.FC<QuestionProps> = ({
   onScoreUpdate,
 }) => {
   const [isAnswerRevealed, setIsAnswerRevealed] = useState(false);
+  const [hasScoreChange, setHasScoreChange] = useState(false);
 
   const handleReveal = () => {
     setIsAnswerRevealed(true);
     onReveal?.();
   };
 
+  const handleScoreUpdate = (teamId: string, increment: boolean) => {
+    onScoreUpdate(teamId, increment);
+    setHasScoreChange(true);
+  };
+
   // Handle keyboard shortcuts
   React.useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
-      if (event.code === 'Escape') {
+      if (event.code === 'Escape' && hasScoreChange) {
         onContinue?.();
       } else if (event.code === 'Space') {
         handleReveal();
@@ -46,7 +47,7 @@ const Question: React.FC<QuestionProps> = ({
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [onContinue]);
+  }, [onContinue, hasScoreChange]);
 
   return (
     <div className="fixed inset-0 bg-[#000066] text-white p-4 flex flex-col">
@@ -54,7 +55,12 @@ const Question: React.FC<QuestionProps> = ({
       <div className="flex justify-between items-center mb-8">
         <button 
           onClick={onContinue}
-          className="px-4 py-2 text-sm bg-blue-700 hover:bg-blue-600 rounded transition-colors"
+          disabled={!hasScoreChange}
+          className={`px-4 py-2 text-sm rounded transition-colors ${
+            hasScoreChange 
+              ? 'bg-blue-700 hover:bg-blue-600' 
+              : 'bg-gray-600 cursor-not-allowed'
+          }`}
         >
           Continue (ESC)
         </button>
@@ -86,8 +92,8 @@ const Question: React.FC<QuestionProps> = ({
 
       {/* Team Scores */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-        {teams.map(team => (
-          <div key={team.id} className="text-center">
+        {teams.map((team,index) => (
+          <div key={index} className="text-center">
             <h3 className="text-xl font-bold border-b-2 border-blue-500 pb-2 mb-2">
               {team.name}
             </h3>
@@ -96,13 +102,13 @@ const Question: React.FC<QuestionProps> = ({
             </div>
             <div className="flex gap-2 justify-center">
               <button
-                onClick={() => onScoreUpdate(team.id, true)}
+                onClick={() => handleScoreUpdate(team.id.toString(), true)}
                 className="w-10 h-10 bg-green-600 hover:bg-green-700 rounded-full flex items-center justify-center text-xl font-bold transition-colors"
               >
                 +
               </button>
               <button
-                onClick={() => onScoreUpdate(team.id, false)}
+                onClick={() => handleScoreUpdate(team.id.toString(), false)}
                 className="w-10 h-10 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-xl font-bold transition-colors"
               >
                 -
