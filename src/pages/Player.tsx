@@ -21,47 +21,19 @@ function TeamInfo({ partidaId, teamId, score, teamName, isAnswerEnabled, answer,
 }) {
     return (
         <div className="bg-[#000066] rounded-lg p-6 md:p-8 shadow-lg">
-            <h1 className="text-2xl md:text-3xl font-bold mb-6 text-center">
-                Team Score
-            </h1>
-            
+                        
             <div className="space-y-6">
                 <div className="text-center">
-                    <p className="text-gray-300 text-sm md:text-base mb-1">Game ID</p>
-                    <p className="font-mono text-base md:text-lg bg-[#000044] p-2 rounded">
-                        {partidaId}
-                    </p>
-                </div>
-
-                <div className="text-center">
-                    <p className="text-gray-300 text-sm md:text-base mb-1">Team</p>
-                    <p className="font-bold text-xl md:text-2xl text-yellow-400">
+                <h1 className="text-2xl md:text-3xl font-bold mb-6 text-center">
                         {teamName}
-                    </p>
+                    </h1>
                 </div>
 
                 <div className="flex flex-col items-center space-y-4">
-                    <div className="w-full max-w-xs">
-                        <label htmlFor="score" className="block text-gray-300 text-sm md:text-base mb-2">
-                            Current Score
-                        </label>
-                        <input
-                            id="score"
-                            type="text"
-                            value={score}
-                            className="w-full bg-[#000044] text-white text-2xl md:text-3xl font-bold p-3 rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            disabled
-                        />
-                    </div>
+                
                     <div className="w-full max-w-xs space-y-4">
                         <div className="flex items-center justify-between">
-                            <button
-                                onClick={startAnswerTimer}
-                                disabled={isAnswerEnabled}
-                                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Start Answer
-                            </button>
+                            
                             {isAnswerEnabled && (
                                 <CircularTimer
                                     duration={60}
@@ -86,6 +58,24 @@ function TeamInfo({ partidaId, teamId, score, teamName, isAnswerEnabled, answer,
                         >
                             Submit Answer
                         </button>
+                        <div className="text-center">
+                    <p className="text-gray-300 text-sm md:text-base mb-1">Game ID</p>
+                    <p className="font-mono text-base md:text-lg bg-[#000044] p-2 rounded">
+                        {partidaId}
+                    </p>
+                </div>
+                    <div className="w-full max-w-xs">
+                        <label htmlFor="score" className="block text-gray-300 text-sm md:text-base mb-2">
+                            Current Score
+                        </label>
+                        <input
+                            id="score"
+                            type="text"
+                            value={score}
+                            className="w-full bg-[#000044] text-white text-2xl md:text-3xl font-bold p-3 rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            disabled
+                        />
+                    </div>
                     </div>
                 </div>
             </div>
