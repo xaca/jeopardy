@@ -27,7 +27,7 @@ const TeamCard: React.FC<TeamCardProps> = ({ id, name, score, partidaId }) => {
         />
       </div>
       <p className="text-xs text-center mt-2 text-gray-300 break-all">
-        {playerUrl}
+        <a href={playerUrl} target="_blank" rel="noopener noreferrer">Link</a>
       </p>
     </div>
   );

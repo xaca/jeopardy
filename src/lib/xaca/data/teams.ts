@@ -132,6 +132,7 @@ export async function createPartida(): Promise<string> {
         // Create a new document in the partidas collection
         // We'll add a timestamp to track when the partida was created
         const partidaRef = await addDoc(collection(db, "partidas"), {
+            board:"0,0,0,0,0;0,0,0,0,0;0,0,0,0,0;0,0,0,0,0;0,0,0,0,0",
             createdAt: new Date().toISOString(),
             status: "active" // You can use this to track if the game is active, finished, etc.
         });
